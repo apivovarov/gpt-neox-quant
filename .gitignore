@@ -1,0 +1,6 @@
+__pycache__
+*.onnx
+*.trt
+profile.nsys-rep
+*.bin
+gpt-neo-*-onnx
