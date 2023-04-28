@@ -4,3 +4,4 @@ __pycache__
 profile.nsys-rep
 *.bin
 gpt-neo-*-onnx
+gpt-neo-*_fakequant

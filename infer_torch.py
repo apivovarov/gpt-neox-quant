@@ -2,6 +2,7 @@ text="""One morning, when Gregor Samsa woke from troubled dreams, he found himse
 
 tokens=[3198, 3329, 11, 618, 8547, 273, 3409, 11400, 19092, 422, 17840, 10625, 11, 339, 1043, 2241, 14434, 287, 465, 3996, 656, 257, 12361, 3326, 1084, 13, 679, 3830, 319, 465, 18588, 12, 2339, 736, 11, 290, 611, 339, 13663, 465, 1182, 257, 1310, 339, 714, 766, 465, 7586, 19921, 11, 4622, 2401, 276, 290, 9086, 416, 610, 2052, 656, 15175, 9004, 13, 383, 3996, 12083, 373, 8941, 1498, 284, 3002, 340, 290, 3947, 3492, 284, 10649, 572, 597, 2589, 13, 2399, 867, 7405, 11, 6028, 17049, 7888, 3688, 351, 262, 2546, 286, 262, 1334, 286, 683, 11, 26834, 546, 21144, 306, 355, 339, 3114, 13, 366, 2061, 338, 3022, 284, 502, 1701, 339, 1807, 13, 632, 2492, 470, 257, 4320, 13, 2399, 2119, 11, 257, 1774, 1692, 2119, 3584, 257, 1310, 1165, 1402, 11, 3830, 30996, 1022, 663, 1440, 5385, 7714, 13, 317, 4947, 286, 45293, 8405, 3830, 4104, 503, 319, 262, 3084, 532, 3409, 11400, 373, 257, 16574, 42414, 532, 290, 2029, 340, 612, 9174, 257, 4286, 326, 339, 550, 2904, 2005, 503, 286, 281, 18542, 7093, 290, 23707, 287, 257, 3621, 11, 308, 46158, 5739, 13, 632, 3751, 257, 10846, 18235, 503, 351, 257, 9230, 6877, 290, 9230, 1489, 64, 508, 3332, 24826, 11, 8620, 257, 4334, 9230, 27563, 326, 5017, 262, 2187, 286, 607, 2793, 3211, 3371, 262, 19091, 13, 8547, 273, 788, 2900, 284, 804, 503, 262, 4324, 379, 262, 19222, 6193, 13, 41692, 286, 6290, 714, 307, 2982, 9008, 262, 37218, 11, 543, 925, 683, 1254, 2407, 6507, 13, 366, 2437, 546, 611, 314, 3993, 257, 1310, 1643, 2392, 290, 6044, 477, 428, 18149, 1600, 339, 1807, 11, 475, 326, 373, 1223, 339, 373, 5906, 284, 466, 780, 339, 373, 973, 284, 11029, 319, 465, 826, 11, 290, 287, 465, 1944, 1181, 3521, 470, 651, 656]
 
+tokens=[27079, 318, 1576]
 
 import torch
 #import torchinfo
@@ -13,16 +14,16 @@ np.set_printoptions(precision=5)
 #torch.backends.cudnn.enabled = True
 from transformers import pipeline, set_seed
 from transformers import AutoModelForCausalLM, AutoTokenizer
-set_seed(42)
-device="cuda"
+#set_seed(42)
+device="cuda:0"
 load_in_fp16=True
 load_in_8bit=False
 #load_in_8bit=True
 #model_name='gpt2'
-model_name="EleutherAI/gpt-neo-2.7B"
+#model_name="EleutherAI/gpt-neo-2.7B"
 #model_name="EleutherAI/gpt-neo-1.3B"
 #model_name="EleutherAI/gpt-neo-125M"
-#model_name="EleutherAI/gpt-neo-125M"
+model_name="EleutherAI/gpt-neo-125M"
 #model_name="EleutherAI/gpt-neox-20b"
 #model_name = "gpt-neox-20b-16"
 model=AutoModelForCausalLM.from_pretrained(model_name)
@@ -45,6 +46,8 @@ torch.cuda.empty_cache()
 BATCH_SIZE = 1
 N_tokens = 300
 A_tokens = 300
+N_tokens = 2
+A_tokens = 2
 F_tokens = N_tokens - A_tokens
 
 def count_parameters(model):
@@ -74,7 +77,7 @@ print(tokenizer.decode(tokens[:A_tokens + 1]))
 for top1 in topk:
   print("id/prop/word", top1, logits[top1], f"'{tokenizer.decode(top1)}'")
 
-#exit()
+exit()
 
 # Warmup
 for i in range(10):

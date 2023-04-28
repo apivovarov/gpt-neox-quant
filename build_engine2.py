@@ -5,15 +5,17 @@ import builtins
 
 from net_utils import set_fp32, EngineCalibrator
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("EngineBuilder").setLevel(logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("EngineBuilder").setLevel(logging.DEBUG)
 log = logging.getLogger("EngineBuilder")
 
-onnx_path = "gpt-neo-2.7b-onnx/gpt-neo-2.7b.onnx"
-engine_path = "./gpt-neo-2.7b_int8_fast.trt"
+onnx_path = "gpt-neo-125m_fakequant.onnx"
+engine_path = "./gpt-neo-125m_int8.trt"
+cache_file = "calib_cache-125m.bin"
 
-onnx_path = "gpt-neo-125m.onnx"
-engine_path = "./gpt-neo-125m_fp16.trt"
+onnx_path = "gpt-neo-1.3b_fakequant/gpt-neo-1.3b_fakequant.onnx"
+engine_path = "./gpt-neo-1.3b_int8.trt"
+cache_file = "calib_cache-125m.bin"
 
 trt_logger = trt.Logger(trt.Logger.INFO)
 
@@ -24,11 +26,11 @@ config = builder.create_builder_config()
 config.profiling_verbosity=trt.ProfilingVerbosity.DETAILED
 #config.flags=0
 config.set_flag(trt.BuilderFlag.FP16)
-#config.set_flag(trt.BuilderFlag.INT8)
-#config.int8_calibrator = EngineCalibrator("calib_cache-2.7b.bin")
+config.set_flag(trt.BuilderFlag.INT8)
+config.int8_calibrator = EngineCalibrator(cache_file)
 config.set_flag(trt.BuilderFlag.OBEY_PRECISION_CONSTRAINTS)
-config.set_flag(trt.BuilderFlag.SPARSE_WEIGHTS)
-config.set_preview_feature(trt.PreviewFeature.FASTER_DYNAMIC_SHAPES_0805, True)
+#config.set_flag(trt.BuilderFlag.SPARSE_WEIGHTS)
+#config.set_preview_feature(trt.PreviewFeature.FASTER_DYNAMIC_SHAPES_0805, True)
 
 
 max_ws_size = 15 * (2 ** 30)
@@ -61,15 +63,25 @@ def desc_layer(l, i):
 set_fp32(network)
 
 num_layers = network.num_layers
-for i in range(num_layers-1):
+print("num_layers:", num_layers)
+for i in range(num_layers):
     l = network.get_layer(i)
-    l1 = network.get_layer(i+1)
-    if not(l.type == trt.LayerType.ELEMENTWISE and l1.type == trt.LayerType.REDUCE):
-        continue
-    desc_layer(l, i)
-    desc_layer(l1, i+1)
+    #desc_layer(l, i)
+    # l.precision = trt.float32
+    # for j in range(l.num_outputs):
+    #     l.set_output_type(j, trt.float32)
+    # if "/model/transformer/h.0/attn/attention/Softmax" in l.name:
+    #     l.precision = trt.float32
+    #     l.set_output_type(0, trt.float32)
+    #     l_prev = network.get_layer(i-1)
+    #     l_prev.precision = trt.float32
+    #     l_prev.set_output_type(0, trt.float32)
+    #     l_next = network.get_layer(i + 1)
+    #     l_next.precision = trt.float32
+    #     l_next.set_output_type(0, trt.float32)
+    #     desc_layer(l, i)
 
-
+#exit()
 inputs = [network.get_input(i) for i in range(network.num_inputs)]
 dynamic_inputs = False
 for a in inputs:
@@ -90,9 +102,8 @@ for a in inputs:
 
 config.add_optimization_profile(profile)
 
-precision=""
 engine_path = os.path.realpath(engine_path)
-log.info("Building {} Engine in {}".format(precision, engine_path))
+log.info("Building Engine in {}".format(engine_path))
 log.info(f"builder.platform_has_tf32: {builder.platform_has_tf32}")
 log.info(f"builder.platform_has_fast_fp16: {builder.platform_has_fast_fp16}")
 log.info(f"builder.platform_has_fast_int8: {builder.platform_has_fast_int8}")
@@ -121,7 +132,10 @@ builtins.input("Press any key to continue")
 
 log.info("==== builder.build_serialized_network")
 engine_bytes = builder.build_serialized_network(network, config)
-with open(engine_path, "wb") as f:
-    log.info("==== Serializing engine to file: {:}".format(engine_path))
-    f.write(engine_bytes)
+if engine_bytes:
+    with open(engine_path, "wb") as f:
+        log.info("==== Serializing engine to file: {:}".format(engine_path))
+        f.write(engine_bytes)
+else:
+    print("Failed to create engine_bytes")
 

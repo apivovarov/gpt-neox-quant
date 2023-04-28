@@ -12,14 +12,20 @@ device="cpu"
 load_in_8bit=False
 #model_name='gpt2'
 #model_name="EleutherAI/gpt-neo-1.3B"
-model_name="EleutherAI/gpt-neo-2.7B"
-#model_name="EleutherAI/gpt-neo-125M"
+#model_name="EleutherAI/gpt-neo-2.7B"
+model_name="EleutherAI/gpt-neo-125M"
 #model_name="EleutherAI/gpt-neox-20b"
 #model_name="gpt-neox-20b-1"
 #model_name="gpt-neox-20b-41"
 #model_name="gpt-neox-20b-16"
 model=AutoModelForCausalLM.from_pretrained(model_name)
-#tokenizer = AutoTokenizer.from_pretrained(model_name)
+#model=None
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+#ss=tokenizer.decode([2233, 318, 213, 43])
+prompt = "Germany is"
+tokenized_input = tokenizer(prompt) #[27079, 318]
+print(prompt, tokenized_input)
 
 print("Loaded")
 class CausalLMWrapper(torch.nn.Module):
@@ -37,16 +43,16 @@ class CausalLMWrapper(torch.nn.Module):
 
 m2=CausalLMWrapper(model)
 
-input_ids = torch.tensor([[2233, 318, 213, 43]], dtype=torch.int64).to(device)
-attention_mask = torch.tensor([[1,1,1,1]]).to(device)
+input_ids = torch.LongTensor([tokenized_input["input_ids"]]).to(device)
+attention_mask = torch.Tensor([tokenized_input["attention_mask"]]).to(device)
 
 print("Running")
 out = m2(input_ids, attention_mask)
 
 print("Model run done. out shape:", out.shape)
+print("out dtype:", out.dtype)
 
-
-if 0: 
+if 0:
   input_size = 100
   input_tokens = torch.LongTensor([[42]*input_size])
   torchinfo.summary(model, input_data={"input_ids":input_tokens})
